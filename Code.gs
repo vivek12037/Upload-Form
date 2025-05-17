@@ -501,8 +501,19 @@ function getCurrentUser() {
 }
 
 function validateExcelHeaders(fileData, fileName, reportType) {
+  
   try {
+    console.log("=== validateExcelHeaders START ===");
+    console.log("fileData length:", fileData?.length || "null");
+    console.log("fileName:", fileName || "null");
+    console.log("reportType:", reportType || "null");
+    Utilities.sleep(100); // Small delay to ensure logs flush
     // Basic validation
+
+    if (!fileData || !fileName || !reportType) {
+      throw new Error(`Missing parameters - fileData: ${!!fileData}, fileName: ${fileName}, reportType: ${reportType}`);
+    }
+
     if (!fileData || !fileName || !reportType) {
       throw new Error("Missing required parameters");
     }
