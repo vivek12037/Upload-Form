@@ -520,9 +520,29 @@ function validateExcelHeaders(fileData, fileName, reportType) {
       throw new Error("Target sheet not found for this report type");
     }
     
-    // Get expected headers (skip first 5 system columns)
+    // Get all headers from target sheet (system + data)
     const allHeaders = targetSheet.getRange(1, 1, 1, targetSheet.getLastColumn()).getValues()[0];
-    const expectedHeaders = allHeaders.slice(5); // Skip first 5 system columns
+    
+    // Expected data headers (skip first 5 system columns)
+    const expectedHeaders = allHeaders.slice(5); // Columns F onward
+
+    // ADD THIS DETAILED LOGGING CODE HERE
+    Logger.log("============= DETAILED HEADER DEBUG INFO =============");
+    Logger.log("Report Type: " + reportType);
+    Logger.log("Target Sheet: " + sheetName);
+    Logger.log("Expected Headers Count: " + expectedHeaders.length);
+    
+    // Log each expected header with its position and character codes
+    Logger.log("EXPECTED HEADERS (from spreadsheet):");
+    expectedHeaders.forEach(function(header, index) {
+      if (header) {
+        const charCodes = header.toString().split('').map(c => c.charCodeAt(0).toString(16)).join(' ');
+        Logger.log(`${index + 1}: '${header}' (${typeof header}) - Char codes: ${charCodes}`);
+      } else {
+        Logger.log(`${index + 1}: [EMPTY]`);
+      }
+    });
+    
     
     // Create temp file to read headers
     const blob = Utilities.newBlob(Utilities.base64Decode(fileData), fileName);
@@ -539,38 +559,41 @@ function validateExcelHeaders(fileData, fileName, reportType) {
     // Clean up temp file
     Drive.Files.remove(file.id);
     
-    // For debugging, log the headers
-    Logger.log("Expected headers (after slice): " + JSON.stringify(expectedHeaders));
-    Logger.log("Found headers in Excel: " + JSON.stringify(tempHeaders));
+    // Convert headers to strings and normalize by trimming and converting to lowercase
+    const normalizedExpected = expectedHeaders.map(h => h ? h.toString().trim().toLowerCase() : '');
+    const normalizedFound = tempHeaders.map(h => h ? h.toString().trim().toLowerCase() : '');
     
-    // Normalize both header sets - consistently standardize case, whitespace and trim
-    const normalizedExpected = expectedHeaders.map(h => h.toString().trim().toLowerCase());
-    const normalizedFound = tempHeaders.map(h => h.toString().trim().toLowerCase());
+    // Log exact headers for debugging
+    Logger.log("Expected headers: " + JSON.stringify(normalizedExpected));
+    Logger.log("Found headers: " + JSON.stringify(normalizedFound));
     
-    Logger.log("Normalized expected: " + JSON.stringify(normalizedExpected));
-    Logger.log("Normalized found: " + JSON.stringify(normalizedFound));
+    // Check for exact matches first - this is for debugging
+    const exactMatchCount = normalizedExpected.filter((header, index) => 
+      header === (normalizedFound[index] || '')).length;
+    Logger.log("Exact position matches: " + exactMatchCount + " out of " + normalizedExpected.length);
     
-    // More lenient matching - as long as each expected header has a counterpart in found headers
-    // This approach focuses on ensuring all necessary columns are present, rather than requiring exact matches
+    // Find headers that are genuinely missing (not in uploaded file at all)
     let missingHeaders = [];
-    let extraHeaders = [];
-    
-    // Check for missing headers - these are required
     normalizedExpected.forEach((expectedHeader, index) => {
-      if (!normalizedFound.some(foundHeader => foundHeader === expectedHeader)) {
+      // Skip empty headers
+      if (expectedHeader && !normalizedFound.includes(expectedHeader)) {
         missingHeaders.push(expectedHeaders[index]);
       }
     });
     
-    // Check for extra headers - these are acceptable but we'll report them
+    // Find extra headers in uploaded file
+    let extraHeaders = [];
     normalizedFound.forEach((foundHeader, index) => {
-      if (!normalizedExpected.some(expectedHeader => expectedHeader === foundHeader)) {
+      // Skip empty headers
+      if (foundHeader && !normalizedExpected.includes(foundHeader)) {
         extraHeaders.push(tempHeaders[index]);
       }
     });
     
-    // If there are no missing headers, consider it valid - extra headers are okay
-    const isValid = missingHeaders.length === 0;
+    // IMPORTANT: Consider valid if at least 80% of expected headers are found
+    // This handles minor differences like typos or formatting
+    const matchPercentage = (normalizedExpected.length - missingHeaders.length) / normalizedExpected.length;
+    const isValid = missingHeaders.length === 0 || matchPercentage >= 0.8;
     
     return {
       isValid: isValid,
@@ -579,151 +602,23 @@ function validateExcelHeaders(fileData, fileName, reportType) {
       foundHeaders: tempHeaders,
       missingHeaders: missingHeaders,
       extraHeaders: extraHeaders,
-      message: isValid ? "Headers match" : "Headers don't match"
+      message: isValid ? "Headers match" : "Headers don't match",
+      // Include extended debug info
+      debug: {
+        exactMatches: exactMatchCount,
+        totalExpected: normalizedExpected.length,
+        matchPercentage: matchPercentage,
+        normalizedExpected: normalizedExpected,
+        normalizedFound: normalizedFound
+      }
     };
     
   } catch (e) {
     Logger.log('Error in validateExcelHeaders: ' + e.toString());
     return {
       isValid: false,
-      message: 'Error validating headers: ' + e.message
-    };
-  }
-}
-
-// Helper function to compare arrays
-function arraysEqual(a, b) {
-  if (a.length !== b.length) return false;
-  const normalizedA = a.map(item => item.toString().trim().toLowerCase());
-  const normalizedB = b.map(item => item.toString().trim().toLowerCase());
-  
-  for (let i = 0; i < normalizedA.length; i++) {
-    if (normalizedA[i] !== normalizedB[i]) return false;
-  }
-  return true;
-}
-
-function processUploadedFile(fileData, fileName, reportType) {
-  try {
-    // Validate inputs
-    if (!fileData || !fileName || !reportType) {
-      return { success: false, message: "Missing required parameters" };
-    }
-    
-    if (!fileName.toLowerCase().endsWith('.xlsx')) {
-      return { success: false, message: "Only Excel (.xlsx) files are supported" };
-    }
-    
-    // Get current user from cache
-    const cache = CacheService.getScriptCache();
-    const currentUser = JSON.parse(cache.get('currentUser'));
-    
-    if (!currentUser || !currentUser.id) {
-      return { success: false, message: "User session expired. Please login again." };
-    }
-    
-    // Get target sheet
-    const ss = SpreadsheetApp.openById('15Q_EMBhht_yw6BbY5Kx9BV4ictn2zKqoTiKuvFilxTo');
-    const sheetName = 'Sub_' + reportType.replace(/\s+/g, '_').substring(0, 25).replace(/[\/\\?\*\[\]]/g, '');
-    const targetSheet = ss.getSheetByName(sheetName);
-    
-    if (!targetSheet) {
-      return { success: false, message: "Target sheet not found for this report type" };
-    }
-    
-    // Get all headers (system + data)
-    const allHeaders = targetSheet.getRange(1, 1, 1, targetSheet.getLastColumn()).getValues()[0];
-    const dataHeaders = allHeaders.slice(5); // Skip first 5 system columns
-    
-    // Parse the Excel file
-    const blob = Utilities.newBlob(Utilities.base64Decode(fileData), fileName);
-    const resource = {
-      title: 'Temp Excel Import',
-      mimeType: MimeType.MICROSOFT_EXCEL,
-      parents: [{id: ss.getId()}]
-    };
-    
-    const file = Drive.Files.insert(resource, blob, {convert: true});
-    const tempSheet = SpreadsheetApp.openById(file.id);
-    const tempData = tempSheet.getSheets()[0].getDataRange().getValues();
-    const tempHeaders = tempData[0];
-    
-    // Normalize headers for comparison
-    const normalizedExpected = dataHeaders.map(h => h.toString().trim().toLowerCase());
-    const normalizedFound = tempHeaders.map(h => h.toString().trim().toLowerCase());
-    
-    // Create a mapping from source columns to target columns
-    // This allows for flexibility in column order
-    const columnMapping = [];
-    let missingColumns = [];
-    
-    // For each target data column, find matching source column
-    normalizedExpected.forEach((expectedHeader, targetIndex) => {
-      const sourceIndex = normalizedFound.findIndex(h => h === expectedHeader);
-      if (sourceIndex !== -1) {
-        columnMapping.push({ 
-          sourceIndex: sourceIndex,
-          targetIndex: targetIndex + 5 // +5 for system columns
-        });
-      } else {
-        missingColumns.push(dataHeaders[targetIndex]);
-      }
-    });
-    
-    // If any columns are missing, abort
-    if (missingColumns.length > 0) {
-      Drive.Files.remove(file.id);
-      return { 
-        success: false, 
-        message: `Missing required columns in Excel file: ${missingColumns.join(', ')}` 
-      };
-    }
-    
-    // Prepare data for insertion
-    const rowsToInsert = [];
-    for (let i = 1; i < tempData.length; i++) {
-      const row = tempData[i];
-      
-      // Create new row with all columns initialized to empty string
-      const newRow = new Array(allHeaders.length).fill('');
-      
-      // Set system fields
-      newRow[0] = new Date();             // Timestamp
-      newRow[1] = reportType;             // Report Type
-      newRow[2] = currentUser.id;         // ID
-      newRow[3] = currentUser.name || ''; // Name
-      newRow[4] = currentUser.zone || ''; // Zone
-      
-      // Map data columns from Excel to appropriate positions
-      columnMapping.forEach(mapping => {
-        newRow[mapping.targetIndex] = row[mapping.sourceIndex];
-      });
-      
-      rowsToInsert.push(newRow);
-    }
-    
-    // Insert data into target sheet
-    if (rowsToInsert.length > 0) {
-      targetSheet.getRange(targetSheet.getLastRow() + 1, 1, rowsToInsert.length, allHeaders.length)
-        .setValues(rowsToInsert);
-      
-      // Clean up temp file
-      Drive.Files.remove(file.id);
-      
-      return { 
-        success: true, 
-        message: `Successfully imported ${rowsToInsert.length} rows to ${sheetName}` 
-      };
-    } else {
-      Drive.Files.remove(file.id);
-      return { success: false, message: "No valid data rows found in the Excel file" };
-    }
-    
-  } catch (e) {
-    Logger.log('Error in processUploadedFile: ' + e.toString());
-    return { 
-      success: false, 
-      message: 'Error processing file: ' + e.message 
+      message: 'Error validating headers: ' + e.message,
+      error: e.stack
     };
   }
 }
