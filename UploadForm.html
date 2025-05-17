@@ -525,23 +525,22 @@
           
           // Read the file to validate headers
           const reader = new FileReader();
-          reader.onload = function(e) {
-            const data = e.target.result;
-            const base64Data = arrayBufferToBase64(data);
-            
-            uploadMessage.style.display = 'none';
-            
-            google.script.run
-              .withSuccessHandler(function(validation) {
-                headerPreview.style.display = 'block';
-                if (validation.isValid) {
-                  validationResult.innerHTML = `
-                    <div class="header-match">Headers match perfectly!</div>
-                    <p>File will be uploaded to: <strong>${validation.targetSheet}</strong></p>
-                    <p class="note">System will automatically add these columns:<br>
-                    Timestamp, Report Type, ID, Name, Zone</p>
-                  `;
-                  uploadBtn.disabled = false;
+reader.onload = function(e) {
+  const fileData = e.target.result.split(',')[1]; // Extract base64 data after comma
+  const fileName = fileInput.files[0].name;
+  
+  uploadMessage.style.display = 'none';
+  
+  google.script.run
+  .withSuccessHandler(function(validation) {
+    headerPreview.style.display = 'block';
+    if (validation.isValid) {
+      validationResult.innerHTML = `
+        <div class="header-match">Headers match perfectly!</div>
+        <p>File will be uploaded to: <strong>${validation.targetSheet}</strong></p>
+      `;
+      uploadBtn.disabled = false;
+                
                 } else {
                   let mismatchDetails = '';
                   if (validation.expectedHeaders && validation.foundHeaders) {
@@ -590,11 +589,10 @@
                 }
               })
               .withFailureHandler(function(error) {
-                showMessage(uploadMessage, 'Error validating headers: ' + error.message, 'error');
-                headerPreview.style.display = 'none';
-                uploadBtn.disabled = true;
+              console.error("Backend error:", error); // Check browser console
+              showMessage(uploadMessage, 'Validation error: ' + error.message, 'error');
               })
-              .validateExcelHeaders(base64Data, file.name, reportType.value);
+              .validateExcelHeaders(filedata, file.name, reportType.value);
           };
           reader.readAsArrayBuffer(file);
         } else {
@@ -611,15 +609,6 @@
         element.style.display = 'block';
       }
       
-      // Convert ArrayBuffer to Base64
-      function arrayBufferToBase64(buffer) {
-        let binary = '';
-        const bytes = new Uint8Array(buffer);
-        for (let i = 0; i < bytes.byteLength; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        return btoa(binary);
-      }
     });
   </script>
 </body>
