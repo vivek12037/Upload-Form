@@ -1,0 +1,626 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #1a73e8;
+      --primary-dark: #0d47a1;
+      --secondary-color: #4285f4;
+      --success-color: #0d652d;
+      --error-color: #d93025;
+      --light-gray: #f8f9fa;
+      --border-color: #dadce0;
+      --text-primary: #202124;
+      --text-secondary: #5f6368;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Roboto', sans-serif;
+      color: var(--text-primary);
+      line-height: 1.5;
+      background-color: #f1f3f4;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+      padding: 32px;
+      transition: all 0.3s ease;
+    }
+    
+    h2 {
+      color: var(--primary-color);
+      margin-top: 0;
+      margin-bottom: 24px;
+      font-weight: 500;
+      font-size: 20px;
+      text-align: center;
+    }
+    
+    .header-logo {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    
+    .header-logo img {
+      height: 40px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      transition: border 0.2s;
+      outline: none;
+    }
+    
+    .form-control:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+    }
+    
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 120px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .btn:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .btn:disabled {
+      background-color: var(--border-color);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background-color: #f1f3f4;
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+    
+    .btn-secondary:hover {
+      background-color: #dadce0;
+    }
+    
+    .alert {
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      display: none;
+      font-size: 14px;
+    }
+    
+    .alert-error {
+      background-color: #fdede9;
+      color: var(--error-color);
+      border: 1px solid #f5c2c7;
+    }
+    
+    .alert-success {
+      background-color: #e6f4ea;
+      color: var(--success-color);
+      border: 1px solid #c3e6cb;
+    }
+    
+    .file-info {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    #loginSection, #uploadSection {
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    
+    .header-preview {
+      margin-top: 24px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 16px;
+      background-color: var(--light-gray);
+    }
+    
+    .header-preview h4 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    
+    .header-match {
+      color: var(--success-color);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+    }
+    
+    .header-match:before {
+      content: '✓';
+      display: inline-block;
+      margin-right: 6px;
+      font-weight: bold;
+    }
+    
+    .header-mismatch {
+      color: var(--error-color);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+    }
+    
+    .header-mismatch:before {
+      content: '✗';
+      display: inline-block;
+      margin-right: 6px;
+      font-weight: bold;
+    }
+    
+    .header-list {
+      margin: 10px 0;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    
+    .header-list ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    
+    .header-list li {
+      padding: 4px 0;
+      border-bottom: 1px solid #f1f3f4;
+    }
+    
+    .header-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 24px;
+    }
+    
+    .user-info {
+      margin-bottom: 16px;
+      font-size: 14px;
+      background-color: var(--light-gray);
+      padding: 12px;
+      border-radius: 4px;
+      border-left: 4px solid var(--primary-color);
+    }
+    
+    .user-info strong {
+      color: var(--primary-color);
+    }
+    
+    input[type="file"] {
+      border: 1px dashed var(--border-color);
+      padding: 30px 20px;
+      text-align: center;
+      cursor: pointer;
+      background-color: var(--light-gray);
+      border-radius: 4px;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    
+    input[type="file"]:hover {
+      border-color: var(--primary-color);
+    }
+    
+    .file-drop-label {
+      display: block;
+      font-weight: normal;
+      color: var(--text-secondary);
+    }
+    
+    .note {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+    
+    .fade-enter {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    
+    .fade-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .section-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .section-title h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    
+    .section-title hr {
+      flex-grow: 1;
+      margin-left: 16px;
+      border: none;
+      border-top: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Login Section -->
+    <div id="loginSection">
+      <div class="header-logo">
+        <!-- You can replace with your own logo -->
+        <h1 style="color: var(--primary-color);">Report System</h1>
+      </div>
+      <h2>Login to Report System</h2>
+      <div id="loginMessage" class="alert"></div>
+      
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="employeeId">Employee ID</label>
+          <input type="text" id="employeeId" class="form-control" required autocomplete="off">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-control" required>
+        </div>
+        
+        <button type="submit" id="loginBtn" class="btn" style="width: 100%;">
+          <span id="loginBtnText">Login</span>
+        </button>
+      </form>
+    </div>
+    
+    <!-- Upload Section (Initially Hidden) -->
+    <div id="uploadSection" style="display:none;">
+      <h2>Report Data Upload</h2>
+      
+      <div id="userInfo" class="user-info">
+        Welcome, <strong id="userName">User</strong> | Zone: <span id="userZone">Zone</span>
+      </div>
+      
+      <div id="uploadMessage" class="alert"></div>
+      
+      <div class="section-title">
+        <h3>Select Report Details</h3>
+        <hr>
+      </div>
+      
+      <div class="form-group">
+        <label for="reportType">Report Type</label>
+        <select id="reportType" class="form-control" required>
+          <option value="">-- Select report type --</option>
+          <option value="Scrutiny (CTE)">CTE Scrutiny</option>
+          <option value="Scrutiny (WO-PO)">WO-PO Scrutiny</option>
+          <option value="Surprise Check">Surprise Check</option>
+          <option value="Scrutiny (TA-Med)">TA-Medical Bills</option>
+          <option value="Scrutiny (IPR)">IPR Scrutiny</option>
+          <option value="Scrutiny (Audit Report)">Audit Report</option>
+          <option value="Training (Organized)">Training Organized</option>
+          <option value="Training (Attended)">Training Attended</option>
+          <option value="Systemic Improvement">Systemic Improvement</option>
+        </select>
+      </div>
+      
+      <div class="section-title">
+        <h3>Upload File</h3>
+        <hr>
+      </div>
+      
+      <div class="form-group">
+        <input type="file" id="fileInput" accept=".xlsx">
+        <div id="fileInfo" class="file-info">No file selected</div>
+        <p class="note">Only Excel (.xlsx) files are supported</p>
+      </div>
+      
+      <div id="headerPreview" class="header-preview" style="display:none;">
+        <h4>Header Validation</h4>
+        <div id="validationResult"></div>
+      </div>
+      
+      <div class="button-container">
+        <button id="uploadBtn" class="btn" disabled>
+          <span id="uploadBtnText">Upload File</span>
+        </button>
+        
+        <button id="logoutBtn" class="btn btn-secondary">
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let currentUser = null;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Login elements
+      const loginForm = document.getElementById('loginForm');
+      const loginSection = document.getElementById('loginSection');
+      const uploadSection = document.getElementById('uploadSection');
+      const employeeId = document.getElementById('employeeId');
+      const password = document.getElementById('password');
+      const loginBtn = document.getElementById('loginBtn');
+      const loginBtnText = document.getElementById('loginBtnText');
+      const loginMessage = document.getElementById('loginMessage');
+      
+      // Upload elements
+      const userName = document.getElementById('userName');
+      const userZone = document.getElementById('userZone');
+      const fileInput = document.getElementById('fileInput');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const uploadBtnText = document.getElementById('uploadBtnText');
+      const fileInfo = document.getElementById('fileInfo');
+      const reportType = document.getElementById('reportType');
+      const uploadMessage = document.getElementById('uploadMessage');
+      const headerPreview = document.getElementById('headerPreview');
+      const validationResult = document.getElementById('validationResult');
+      const logoutBtn = document.getElementById('logoutBtn');
+      
+      // Add form submission event (captures Enter key press)
+      loginForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        handleLogin();
+      });
+      
+      // Also keep the click handler for the button
+      loginBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        handleLogin();
+      });
+      
+      // Login handler function
+      function handleLogin() {
+        if (!employeeId.value || !password.value) {
+          showMessage(loginMessage, 'Please enter both Employee ID and Password', 'error');
+          return;
+        }
+        
+        // Show loading state
+        loginBtn.disabled = true;
+        loginBtnText.innerHTML = '<div class="loading"></div> Authenticating...';
+        
+        // Call authentication function
+        google.script.run
+          .withSuccessHandler(function(response) {
+            if (response.success) {
+              currentUser = response.userData;
+              
+              // Update user info display
+              userName.textContent = currentUser.name || 'Unknown User';
+              userZone.textContent = currentUser.zone || 'Unknown Zone';
+              
+              // Hide login, show upload
+              loginSection.style.display = 'none';
+              uploadSection.style.display = 'block';
+              uploadSection.classList.add('fade-enter');
+              
+              // Trigger reflow to enable animation
+              void uploadSection.offsetWidth;
+              uploadSection.classList.add('fade-enter-active');
+              
+              showMessage(uploadMessage, 'Successfully logged in. Please select a report type and file to upload.', 'success');
+            } else {
+              showMessage(loginMessage, 'Authentication failed: ' + response.message, 'error');
+              loginBtn.disabled = false;
+              loginBtnText.textContent = 'Login';
+            }
+          })
+          .withFailureHandler(function(error) {
+            showMessage(loginMessage, 'Error: ' + error.message, 'error');
+            loginBtn.disabled = false;
+            loginBtnText.textContent = 'Login';
+          })
+          .authenticateUser(employeeId.value, password.value);
+      }
+      
+      // Logout event handler
+      logoutBtn.addEventListener('click', function() {
+        currentUser = null;
+        uploadSection.style.display = 'none';
+        loginSection.style.display = 'block';
+        loginMessage.style.display = 'none';
+        employeeId.value = '';
+        password.value = '';
+        loginBtn.disabled = false;
+        loginBtnText.textContent = 'Login';
+        headerPreview.style.display = 'none';
+      });
+      
+      // Update file info and validate headers when file is selected
+      fileInput.addEventListener('change', function() {
+        if (!reportType.value) {
+          showMessage(uploadMessage, 'Please select a report type first', 'error');
+          fileInput.value = '';
+          return;
+        }
+        
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          fileInfo.textContent = file.name;
+          
+          if (!file.name.toLowerCase().endsWith('.xlsx')) {
+            showMessage(uploadMessage, 'Please select an Excel (.xlsx) file', 'error');
+            fileInput.value = '';
+            fileInfo.textContent = 'No file selected';
+            uploadBtn.disabled = true;
+            return;
+          }
+          
+          // Read the file to validate headers
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const data = e.target.result;
+            const base64Data = arrayBufferToBase64(data);
+            
+            uploadMessage.style.display = 'none';
+            
+            google.script.run
+              .withSuccessHandler(function(validation) {
+                headerPreview.style.display = 'block';
+                if (validation.isValid) {
+                  validationResult.innerHTML = `
+                    <div class="header-match">Headers match perfectly!</div>
+                    <p>File will be uploaded to: <strong>${validation.targetSheet}</strong></p>
+                    <p class="note">System will automatically add these columns:<br>
+                    Timestamp, Report Type, ID, Name, Zone</p>
+                  `;
+                  uploadBtn.disabled = false;
+                } else {
+                  let mismatchDetails = '';
+                  if (validation.expectedHeaders && validation.foundHeaders) {
+                    // Create formatted lists for expected and found headers
+                    const expectedList = '<ul>' + validation.expectedHeaders.map(h => `<li>${h}</li>`).join('') + '</ul>';
+                    const foundList = '<ul>' + validation.foundHeaders.map(h => `<li>${h}</li>`).join('') + '</ul>';
+                    
+                    // Add details about missing or extra headers
+                    let missingSection = '';
+                    if (validation.missingHeaders && validation.missingHeaders.length > 0) {
+                      missingSection = `
+                        <p style="color: var(--error-color);">Missing headers:</p>
+                        <div class="header-list">
+                          <ul>${validation.missingHeaders.map(h => `<li>${h}</li>`).join('')}</ul>
+                        </div>
+                      `;
+                    }
+                    
+                    let extraSection = '';
+                    if (validation.extraHeaders && validation.extraHeaders.length > 0) {
+                      extraSection = `
+                        <p style="color: var(--error-color);">Extra headers:</p>
+                        <div class="header-list">
+                          <ul>${validation.extraHeaders.map(h => `<li>${h}</li>`).join('')}</ul>
+                        </div>
+                      `;
+                    }
+                    
+                    mismatchDetails = `
+                      <p>Expected headers:</p>
+                      <div class="header-list">${expectedList}</div>
+                      <p>Found headers:</p>
+                      <div class="header-list">${foundList}</div>
+                      ${missingSection}
+                      ${extraSection}
+                      <p class="note">System columns (Timestamp, Report Type, ID, Name, Zone) will be added automatically.</p>
+                    `;
+                  }
+                  
+                  validationResult.innerHTML = `
+                    <div class="header-mismatch">Header mismatch detected!</div>
+                    ${mismatchDetails}
+                    <p>Please ensure your Excel file headers match the expected headers.</p>
+                  `;
+                  uploadBtn.disabled = true;
+                }
+              })
+              .withFailureHandler(function(error) {
+                showMessage(uploadMessage, 'Error validating headers: ' + error.message, 'error');
+                headerPreview.style.display = 'none';
+                uploadBtn.disabled = true;
+              })
+              .validateExcelHeaders(base64Data, file.name, reportType.value);
+          };
+          reader.readAsArrayBuffer(file);
+        } else {
+          fileInfo.textContent = 'No file selected';
+          headerPreview.style.display = 'none';
+          uploadBtn.disabled = true;
+        }
+      });
+      
+      // Helper function to show messages
+      function showMessage(element, msg, type) {
+        element.textContent = msg;
+        element.className = 'alert alert-' + type;
+        element.style.display = 'block';
+      }
+      
+      // Convert ArrayBuffer to Base64
+      function arrayBufferToBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+      }
+    });
+  </script>
+</body>
+</html>
